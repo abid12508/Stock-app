@@ -1,6 +1,7 @@
 import tkinter as tk
 from extraction import extract_symbol as es
 import UI.search_suggestions as ss
+import api.ynstockdata as yn
 
 # Initialize window
 win = tk.Tk()
@@ -8,9 +9,9 @@ win.geometry("800x600")
 win.title("Stock Predictor App")
 
 # Dropdown/symbols/time intervals
-time_period = ["INTRADAY", "DAILY", "WEEKLY", "MONTHLY"]  
+time_period = ["1d", "5d", "1wk", "1mo", "3mo"]  
 symbols = es.symbols
-time_intervals = [1, 5, 15, 30, 60]
+time_intervals = ["1m", "2m" "5m", "15m", "30m", "60m", "90m"]
 
 # Time dropdown objects
 tp_label = tk.Label(win, text="Time Period")
@@ -50,13 +51,13 @@ def on_entry_change(*args):
 sb_sv.trace_add("write", on_entry_change)
 
 # Create function to call graph 
-def show_graph_func():
+def show_table():
     print("Add graphing soon...")
     print([tp_sv.get(), sb_sv.get(), ti_iv.get()])
     
 
 # Create button to show graph
-show_graph = tk.Button(win, text="Show Graph", command=show_graph_func)
+show_graph = tk.Button(win, text="Show Graph", command=show_table)
 show_graph.place(relx=.3, rely=.4)
 
 # Make window mainloop
