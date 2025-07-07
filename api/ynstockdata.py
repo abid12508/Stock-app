@@ -1,5 +1,5 @@
 import yfinance as yf
-
+import UI.app as app
 
 class Stock:
     def __init__(self, ticker: str):
@@ -8,7 +8,3 @@ class Stock:
     
     def getInfo(self) -> yf.Ticker:
         return self.stk
-    
-## TESTING!
-pop = Stock("AAPL")
-print(pop.getInfo().history("1mo"))

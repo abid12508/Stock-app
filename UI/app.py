@@ -9,13 +9,13 @@ win.geometry("800x600")
 win.title("Stock Predictor App")
 
 # Dropdown/symbols/time intervals
-time_period = ["1d", "5d", "1wk", "1mo", "3mo"]  
+time_period = ["1d", "5d", "7d", "1mo", "3mo"]  
 symbols = es.symbols
-time_intervals = ["1m", "2m" "5m", "15m", "30m", "60m", "90m"]
+time_intervals = ["1m", "2m", "5m", "15m", "30m", "60m", "90m"]
 
 # Time dropdown objects
 tp_label = tk.Label(win, text="Time Period")
-tp_sv = tk.StringVar(value="INTRADAY")  
+tp_sv = tk.StringVar(value="1d")  
 tp_dropdown = tk.OptionMenu(win, tp_sv, *time_period)
 #time dropdown placements
 tp_label.place(relx=.2, rely=.1)
@@ -31,7 +31,7 @@ sb_entry.place(relx=.4, rely=.2)
 
 # time intervals objects
 ti_label = tk.Label(win, text="Time Intervals")
-ti_iv = tk.StringVar(value="5")  
+ti_iv = tk.StringVar(value="5m")  
 ti_dropdown = tk.OptionMenu(win, ti_iv, *time_intervals)
 # time intervals placements
 ti_label.place(relx=.2, rely=.3)
@@ -52,8 +52,9 @@ sb_sv.trace_add("write", on_entry_change)
 
 # Create function to call graph 
 def show_table():
-    print("Add graphing soon...")
-    print([tp_sv.get(), sb_sv.get(), ti_iv.get()])
+    pop = yn.Stock(sb_sv.get())
+    print(pop.getInfo().history(period=tp_sv.get(), interval=ti_iv.get()))
+    
     
 
 # Create button to show graph
