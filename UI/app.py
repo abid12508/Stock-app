@@ -2,7 +2,7 @@ import tkinter as tk
 from extraction import extract_symbol as es
 import UI.search_suggestions as ss
 import api.ynstockdata as yn
-
+import regression.linreg_main as linreg
 # Initialize window
 win = tk.Tk()
 win.geometry("800x600")
@@ -49,11 +49,19 @@ def on_entry_change(*args):
     search_engine.output()
 
 sb_sv.trace_add("write", on_entry_change)
-
+api_info = None
 # Create function to call graph 
 def show_table():
+
     pop = yn.Stock(sb_sv.get())
-    print(pop.getInfo().history(period=tp_sv.get(), interval=ti_iv.get()))
+    api_info = pop.getInfo().history(period=tp_sv.get(), interval=ti_iv.get())
+
+    reg_inst = linreg.Reg(api_info)
+    
+    print(f"-------------- ALL API INFO ---------------------\n {api_info} \n-------------- ALL LINREG INFO ------------------\n")
+    print(reg_inst.do_all())
+    
+
     
     
 
