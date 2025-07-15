@@ -122,7 +122,8 @@ with torch.no_grad():
         prediction = model_eval.item() * big_number
         actual = uno + 4
 
-        print(f"Test:{i} -> Actual answer: {actual}, Predicted Answer: {prediction:.2f}, %Change: {100*(abs(((prediction) - (actual)))/(actual)):.2f}")
+        #Percent change is calculated to measure how accurate the model is
+        print(f"Test:{i} -> Actual answer: {actual}, Predicted Answer: {prediction:.2f}, %Change: {100*(abs(prediction - actual)/(actual)):.2f}")
 
 
     #pre_un = chow(test_seq_un)
