@@ -13,6 +13,10 @@ import first_steps_data as bigdata
 import random as rand
 
 #---------------------- test algorithm -----------------------------
+
+#saw this in a tutorial
+torch.manual_seed(34180) #for reproducibility? just picked a random number for now
+
 # dataset!!
 big_number = 1000
 dataset = bigdata.gen_data([], big_number)
@@ -27,7 +31,7 @@ y = torch.tensor([target/big_number for _, target in dataset],
                   dtype=torch.float32) # first part, needs more looking into (vibe code black magic)
 
 #vibe code black magic plus abid tweakin
-X = X.view(len(dataset), 3, 1)
+X = X.view(len(dataset), 5, 1) #adjust view since we have a 5 term sequence instead of 3
 y = y.view(len(dataset), 1)
 
 
@@ -65,10 +69,12 @@ optimizer = optim.Adam(chow.parameters(), lr=0.005) #no clue about parameters() 
 scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=30, gamma=0.5)
 
 #time to train our model!
-#loops over data set 300 times
+#loops over data set epoch times
 loss_vals = []
 
-for epoch in range(150):
+
+# loss seems to plateu after 50-60ish epochs
+for epoch in range(60):
     chow.train() #sets model to training mode
 
     optimizer.zero_grad() #resets gradients
@@ -86,7 +92,7 @@ for epoch in range(150):
 graph_x = [i for i in range(0, len(loss_vals))]
 graph_y = [float(i) for i in loss_vals]
 
-
+plt.figure(1)
 plt.plot(graph_x, graph_y, color="b")
 
 plt.title("Epochs vs Loss")
@@ -111,6 +117,11 @@ testers = bigdata.gen_testers(big_number)
 #test_seq_trois = torch.tensor([[50.0 / big_number, 51.0 / big_number, 52.0 / big_number]], 
 #                              dtype=torch.float32).view(1, 3, 1)
 
+#visual representation of predicted vs actual (variables)
+x_axis = [i for i in range(50)]
+model_predictions = []
+actual_values = []
+
 #switch to eval mode
 chow.eval()
 with torch.no_grad():
@@ -120,7 +131,9 @@ with torch.no_grad():
         model_eval = chow(test_seq)
 
         prediction = model_eval.item() * big_number
-        actual = uno + 4
+        model_predictions.append(prediction)
+        actual = uno + 6 #adjusted for 5 term sequence
+        actual_values.append(actual)
 
         #Percent change is calculated to measure how accurate the model is
         print(f"Test:{i} -> Actual answer: {actual}, Predicted Answer: {prediction:.2f}, %Change: {100*(abs(prediction - actual)/(actual)):.2f}")
@@ -133,5 +146,19 @@ with torch.no_grad():
     #print(f"Actual answer: 10 Model Prediction: {pre_un.item() * big_number:.2f}")
     #print(f"Actual answer: 43 Model Prediction: {pre_deux.item() * big_number:.2f}")
     #print(f"Actual answer: 53 Model Prediction: {pre_trois.item() * big_number:.2f}")
+
+#visual representation of predicted vs actual (matplotlib code)
+plt.figure(2)
+# Plot each set of Y-values
+plt.scatter(x_axis, model_predictions, label="Predicted", color='r') #
+plt.scatter(x_axis, actual_values, label="Actual", color='b')
+
+# Add labels and title
+plt.xlabel('Tests')
+plt.ylabel('Predictions and Actuals')
+plt.title('Predicted and Actual Values per Test')
+
+#add legend for better clarity
+plt.legend()
 
 plt.show()
