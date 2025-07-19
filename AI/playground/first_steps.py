@@ -1,9 +1,9 @@
-# ai imports 
+# ai imports
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-# graphing 
+# graphing
 import matplotlib.pyplot as plt
 
 #import our dataset
@@ -18,13 +18,16 @@ import random as rand
 torch.manual_seed(34180) #for reproducibility? just picked a random number for now
 
 # dataset!!
-big_number = 1000
+big_number = 10000 #modify this to 50k for higher accuracy? my laptops out of memory
+testing_size = 50
 dataset = bigdata.gen_data([], big_number)
-#dataset = rand.shuffle(dataset)
+
+test_set = bigdata.gen_data([], testing_size)
+rand.shuffle(dataset) #turns out you have to have this as a single line
 
 
 # create tensors (pytorch fancy arrays)
-X = torch.tensor([[i/big_number for i in dataset] for dataset, _ in dataset],
+X = torch.tensor([[i/big_number for i in seq] for seq, _ in dataset],
                   dtype=torch.float32) # first part, needs more looking into (vibe code black magic)
 
 y = torch.tensor([target/big_number for _, target in dataset],
@@ -41,15 +44,15 @@ class AbidLSTM(nn.Module):
         super(AbidLSTM, self).__init__() # required because its a subclass
         #input size -> input a single list of numbers
         #hidden size -> number of neurons between the input layer and the output layer, "brain"
-        #batch first -> idk 
-        
+        #batch first -> idk
+
         self.lstm = nn.LSTM(
             input_size=1,
-            hidden_size=150,
+            hidden_size=64,
             num_layers=2,
             batch_first=True
         )
-        self.linear = nn.Linear(150, 1)
+        self.linear = nn.Linear(64, 1)
 
 
     def forward(self, x):
@@ -66,15 +69,15 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(chow.parameters(), lr=0.005) #no clue about parameters() but our learning rate is 0.01
 
 #learning rate decay?
-scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=30, gamma=0.5)
+#scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=30, gamma=0.5)
 
 #time to train our model!
 #loops over data set epoch times
 loss_vals = []
 
 
-# loss seems to plateu after 50-60ish epochs
-for epoch in range(60):
+# after new update, 
+for epoch in range(100):
     chow.train() #sets model to training mode
 
     optimizer.zero_grad() #resets gradients
@@ -82,9 +85,9 @@ for epoch in range(60):
     loss = criterion(output, y)
     loss.backward()
     optimizer.step()
-    scheduler.step()
+    # scheduler.step()
 
-    val = f"{loss.item():.4f}"
+    print(f"Epoch: {epoch} Loss:{loss.item():.4f}")
     loss_vals.append(loss.item())
 
 
@@ -108,13 +111,13 @@ plt.grid(True)
 
 testers = bigdata.gen_testers(big_number)
 
-#test_seq_un = torch.tensor([[7.0 / big_number, 8.0 / big_number, 9.0 / big_number]], 
+#test_seq_un = torch.tensor([[7.0 / big_number, 8.0 / big_number, 9.0 / big_number]],
 #                           dtype=torch.float32).view(1, 3, 1)
 #
-#test_seq_deux = torch.tensor([[40.0 / big_number, 41.0 / big_number, 42.0 / big_number]], 
+#test_seq_deux = torch.tensor([[40.0 / big_number, 41.0 / big_number, 42.0 / big_number]],
 #                             dtype=torch.float32).view(1, 3, 1)
 #
-#test_seq_trois = torch.tensor([[50.0 / big_number, 51.0 / big_number, 52.0 / big_number]], 
+#test_seq_trois = torch.tensor([[50.0 / big_number, 51.0 / big_number, 52.0 / big_number]],
 #                              dtype=torch.float32).view(1, 3, 1)
 
 #visual representation of predicted vs actual (variables)
@@ -125,18 +128,24 @@ actual_values = []
 #switch to eval mode
 chow.eval()
 with torch.no_grad():
-    for i in range(50):
-        uno = rand.randint(0, big_number)
-        test_seq = testers[uno]
-        model_eval = chow(test_seq)
+    i = 1
+    print("TESTING!")
+    for t_seq, actual in test_set:
+    # for i in range(50):
+        test_tensor = torch.tensor([[i / big_number for i in t_seq]], dtype=torch.float32).view(1, 5, 1)
 
+        #Old testing
+        # uno = rand.randint(0, big_number)
+        # test_seq = testers[uno]
+        model_eval = chow(test_tensor)
         prediction = model_eval.item() * big_number
         model_predictions.append(prediction)
-        actual = uno + 6 #adjusted for 5 term sequence
+        # actual = uno + 6 #adjusted for 5 term sequence
         actual_values.append(actual)
 
         #Percent change is calculated to measure how accurate the model is
-        print(f"Test:{i} -> Actual answer: {actual}, Predicted Answer: {prediction:.2f}, %Change: {100*(abs(prediction - actual)/(actual)):.2f}")
+        print(f"Test:{i} -> Actual answer: {actual}, Predicted Answer: {prediction:.2f}, %Change: {100*(abs(prediction - actual)/(actual)):.2f}, Difference: {abs(prediction - actual):.2f}")
+        i += 1
 
 
     #pre_un = chow(test_seq_un)

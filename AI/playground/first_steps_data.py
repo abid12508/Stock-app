@@ -4,9 +4,17 @@ import random as rand
 def gen_data(dataset, size):
     i = 1
     while i <= size:
-        strt_pt = rand.randint(1, 1000)
+        # strt_pt = rand.randint(1, 1000)
         step = rand.randint(1, 25)
         direc = rand.choice([-1, 1])
+        
+        # attempts to be inclusive for all numbers
+        if i % 3 == 0:
+            strt_pt = rand.randint(-500, -1)  # negative start
+        elif i % 3 == 1:
+            strt_pt = rand.randint(1, 500)    # positive start
+        else:
+            strt_pt = rand.randint(-50, 50)    # around zero
 
         #make sequences longer than 3 to train larger contexts
         seq = [strt_pt + (j * step * direc) for j in range(5)]
