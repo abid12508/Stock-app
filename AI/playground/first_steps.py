@@ -162,6 +162,10 @@ plt.figure(2)
 plt.scatter(x_axis, model_predictions, label="Predicted", color='r') #
 plt.scatter(x_axis, actual_values, label="Actual", color='b')
 
+#Draw line between both points (to visually assess accuracy)
+for x, y_pred, y_actual in zip(x_axis, model_predictions, actual_values):
+    plt.plot([x, x], [y_pred, y_actual], color='purple', linestyle='-', linewidth=1)
+
 # Add labels and title
 plt.xlabel('Tests')
 plt.ylabel('Predictions and Actuals')
