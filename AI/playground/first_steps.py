@@ -11,6 +11,7 @@ import first_steps_data as bigdata
 
 #other imports
 import random as rand
+import pandas as pd
 
 #---------------------- test algorithm -----------------------------
 
@@ -124,6 +125,8 @@ testers = bigdata.gen_testers(big_number)
 x_axis = [i for i in range(50)]
 model_predictions = []
 actual_values = []
+percent_changes = []
+differences = []
 
 #switch to eval mode
 chow.eval()
@@ -143,9 +146,25 @@ with torch.no_grad():
         # actual = uno + 6 #adjusted for 5 term sequence
         actual_values.append(actual)
 
-        #Percent change is calculated to measure how accurate the model is
-        print(f"Test:{i} -> Actual answer: {actual}, Predicted Answer: {prediction:.2f}, %Change: {100*(abs(prediction - actual)/(actual)):.2f}, Difference: {abs(prediction - actual):.2f}")
+        #%change
+        change = 100*(abs(prediction - actual)/(actual))
+        percent_changes.append(change)
+
+        #difference
+        difference = abs(prediction - actual)
+        differences.append(difference)
+
         i += 1
+print(actual_values)
+datatable = {
+    "Actual": actual_values,
+    "Predicted": model_predictions,
+    "%Change": percent_changes,
+    "Difference": differences
+}
+
+dataframe = pd.DataFrame(datatable)
+print(dataframe)
 
 
     #pre_un = chow(test_seq_un)
