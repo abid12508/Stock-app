@@ -51,7 +51,8 @@ class AbidLSTM(nn.Module):
             input_size=1,
             hidden_size=64,
             num_layers=2,
-            batch_first=True
+            batch_first=True,
+
         )
         self.linear = nn.Linear(64, 1)
 
@@ -88,7 +89,7 @@ for epoch in range(100):
     optimizer.step()
     # scheduler.step()
 
-    print(f"Epoch: {epoch} Loss: {loss.item():.4f}")
+    print(f"Epoch: {epoch} Loss:{loss.item():.4f}")
     loss_vals.append(loss.item())
 
 
@@ -105,6 +106,12 @@ plt.ylabel("Losses")
 
 plt.grid(True)
 
+
+
+
+#testing our trained model
+
+testers = bigdata.gen_testers(big_number)
 
 #test_seq_un = torch.tensor([[7.0 / big_number, 8.0 / big_number, 9.0 / big_number]],
 #                           dtype=torch.float32).view(1, 3, 1)
@@ -141,11 +148,8 @@ with torch.no_grad():
         actual_values.append(actual)
 
         #%change
-        try: 
-            change = 100*(abs(prediction - actual)/(actual))
-        except ZeroDivisionError:
-            print("Divion by zero error")
-        
+        change = 100*((prediction - actual)/(actual))
+        change = round(abs(change))
         percent_changes.append(change)
 
         #difference
@@ -154,7 +158,6 @@ with torch.no_grad():
 
         i += 1
 
-#print(actual_values)
 datatable = {
     "Actual": actual_values,
     "Predicted": model_predictions,
@@ -163,15 +166,17 @@ datatable = {
 }
 
 dataframe = pd.DataFrame(datatable)
+#dataframe.to_csv("AI\playground\datacsv", index=False)
 print(dataframe)
 
 
-#pre_un = chow(test_seq_un)
-#pre_deux = chow(test_seq_deux)
-#pre_trois = chow(test_seq_trois)
-#print(f"Actual answer: 10 Model Prediction: {pre_un.item() * big_number:.2f}")
-#print(f"Actual answer: 43 Model Prediction: {pre_deux.item() * big_number:.2f}")
-#print(f"Actual answer: 53 Model Prediction: {pre_trois.item() * big_number:.2f}")
+    #pre_un = chow(test_seq_un)
+    #pre_deux = chow(test_seq_deux)
+    #pre_trois = chow(test_seq_trois)
+
+    #print(f"Actual answer: 10 Model Prediction: {pre_un.item() * big_number:.2f}")
+    #print(f"Actual answer: 43 Model Prediction: {pre_deux.item() * big_number:.2f}")
+    #print(f"Actual answer: 53 Model Prediction: {pre_trois.item() * big_number:.2f}")
 
 #visual representation of predicted vs actual (matplotlib code)
 plt.figure(2)

@@ -34,6 +34,16 @@ def gen_testers(bigboy):
                                  dtype=torch.float32).view(1, 5, 1)) #adjust middle number to account for 5 term sequence
         i+=1
     return data
+
+#AI implementation
+"""Convert closing values into a list 
+    Check Every 4 closing values (starting from the beginning of list)
+    make first 3 into X tensor, 4th is answer (Y tensor).
+    Activate LSTM to predict values, check difference, make adjustments 
+    Shift tensor values by 1 (sliding window technique)
+    Stop LSTM once future price is predicted
+"""
+    
     
 
 

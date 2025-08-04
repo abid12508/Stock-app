@@ -1,2 +1,4 @@
-if "__main__" == __name__:
-    import UI.app as app
+import UI.app as app
+
+if __name__ == "__main__":
+    app.run_app()
