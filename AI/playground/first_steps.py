@@ -26,7 +26,7 @@ big_number = 20000 #modify this to 50k for higher accuracy? my laptops out of me
 SCALE_FACTOR = 500
 HIDDEN_SIZE = 128
 LAYERS = 1
-EPOCHS = 100
+EPOCHS = 150
 
 #Other Variables
 MODEL_NAME = "AbidLSTM"
@@ -67,7 +67,7 @@ class AbidLSTM(nn.Module):
             batch_first=True            
 
         )
-        self.dropout = nn.Dropout(p=.1)
+        self.dropout = nn.Dropout(p=.2)
         self.linear = nn.Linear(HIDDEN_SIZE, 1)
 
 
@@ -208,7 +208,13 @@ plt.legend()
 
 plt.show()
 
+
+#this is for saving the model (if its accurate)
+
+#calculate the average for all the percent changes
 MEAN_ERROR = np.mean(percent_changes)
 
+#if the average error is lower than 1%, save the model
 if (MEAN_ERROR <= 1.00):
     torch.save(chow.state_dict(), f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR * 100}.pth")
+    print(f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR * 100}.pth")
