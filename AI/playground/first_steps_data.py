@@ -5,20 +5,18 @@ def gen_data(dataset, size):
     i = 1
     while i <= size:
         # strt_pt = rand.randint(1, 1000)
-        step = rand.randint(1, 25)
-        direc = rand.choice([-1, 1])
+        step = rand.randint(1, 20)
         
         # attempts to be inclusive for all numbers
-        if i % 3 == 0:
-            strt_pt = rand.randint(-500, -1)  # negative start
-        elif i % 3 == 1:
-            strt_pt = rand.randint(1, 500)    # positive start
+        if i % 2 == 1:
+             strt_pt = rand.uniform(0, 500)    # positive start
         else:
-            strt_pt = rand.randint(-50, 50)    # around zero
-
+             strt_pt = rand.uniform(0, 50)    # around zero
+        
         #make sequences longer than 3 to train larger contexts
-        seq = [strt_pt + (j * step * direc) for j in range(5)]
-        ans = seq[-1] + step * direc
+        
+        seq = [strt_pt + (j * step) for j in range(5)]
+        ans = seq[-1] + step
 
         dataset.append((seq, ans))
         i += 1
@@ -36,14 +34,10 @@ def gen_testers(bigboy):
     return data
 
 #AI implementation
-"""Convert closing values into a list 
+""" Convert closing values into a list 
     Check Every 4 closing values (starting from the beginning of list)
     make first 3 into X tensor, 4th is answer (Y tensor).
     Activate LSTM to predict values, check difference, make adjustments 
     Shift tensor values by 1 (sliding window technique)
     Stop LSTM once future price is predicted
 """
-    
-    
-
-

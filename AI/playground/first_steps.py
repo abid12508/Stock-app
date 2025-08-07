@@ -12,14 +12,27 @@ import first_steps_data as bigdata
 #other imports
 import random as rand
 import pandas as pd
+import numpy as np
 
 #---------------------- test algorithm -----------------------------
 
 #saw this in a tutorial
-torch.manual_seed(34180) #for reproducibility? just picked a random number for now
+#torch.manual_seed(34180) #for reproducibility? just picked a random number for now
 
 # dataset!!
-big_number = 10000 #modify this to 50k for higher accuracy? my laptops out of memory
+big_number = 20000 #modify this to 50k for higher accuracy? my laptops out of memory
+
+#### HYPER PARAMETERS #####
+SCALE_FACTOR = 500
+HIDDEN_SIZE = 128
+LAYERS = 1
+EPOCHS = 100
+
+#Other Variables
+MODEL_NAME = "AbidLSTM"
+MODEL_WEIGHT_PATH = 'weights'
+
+
 testing_size = 50
 dataset = bigdata.gen_data([], big_number)
 
@@ -28,10 +41,10 @@ rand.shuffle(dataset) #turns out you have to have this as a single line
 
 
 # create tensors (pytorch fancy arrays)
-X = torch.tensor([[i/big_number for i in seq] for seq, _ in dataset],
+X = torch.tensor([[i/SCALE_FACTOR for i in seq] for seq, _ in dataset],
                   dtype=torch.float32) # first part, needs more looking into (vibe code black magic)
 
-y = torch.tensor([target/big_number for _, target in dataset],
+y = torch.tensor([target/SCALE_FACTOR for _, target in dataset],
                   dtype=torch.float32) # first part, needs more looking into (vibe code black magic)
 
 #vibe code black magic plus abid tweakin
@@ -49,29 +62,30 @@ class AbidLSTM(nn.Module):
 
         self.lstm = nn.LSTM(
             input_size=1,
-            hidden_size=64,
-            num_layers=2,
-            batch_first=True,
+            hidden_size=HIDDEN_SIZE,
+            num_layers=LAYERS,
+            batch_first=True            
 
         )
-        self.linear = nn.Linear(64, 1)
+        self.dropout = nn.Dropout(p=.1)
+        self.linear = nn.Linear(HIDDEN_SIZE, 1)
 
 
     def forward(self, x):
         model_output, _ = self.lstm(x)
         last_time_step = model_output[:, -1, :]
-        out = self.linear(last_time_step)
-        return out
+        out = self.dropout(last_time_step)
+        return self.linear(out)
 
 # an instance of our baby model
 chow = AbidLSTM()
 
 # create our loss function and our optimizer
 criterion = nn.MSELoss()
-optimizer = optim.Adam(chow.parameters(), lr=0.005) #no clue about parameters() but our learning rate is 0.01
+optimizer = optim.Adam(chow.parameters(), lr=0.01) #no clue about parameters() but our learning rate is 0.01
 
 #learning rate decay?
-#scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=30, gamma=0.5)
+#scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=50, gamma=0.5)
 
 #time to train our model!
 #loops over data set epoch times
@@ -79,7 +93,7 @@ loss_vals = []
 
 
 # after new update, 
-for epoch in range(100):
+for epoch in range(EPOCHS):
     chow.train() #sets model to training mode
 
     optimizer.zero_grad() #resets gradients
@@ -87,7 +101,7 @@ for epoch in range(100):
     loss = criterion(output, y)
     loss.backward()
     optimizer.step()
-    # scheduler.step()
+    #scheduler.step()
 
     print(f"Epoch: {epoch} Loss:{loss.item():.4f}")
     loss_vals.append(loss.item())
@@ -136,20 +150,23 @@ with torch.no_grad():
     print("TESTING!")
     for t_seq, actual in test_set:
     # for i in range(50):
-        test_tensor = torch.tensor([[i / big_number for i in t_seq]], dtype=torch.float32).view(1, 5, 1)
+        test_tensor = torch.tensor([[i / SCALE_FACTOR for i in t_seq]], dtype=torch.float32).view(1, 5, 1)
 
         #Old testing
         # uno = rand.randint(0, big_number)
         # test_seq = testers[uno]
         model_eval = chow(test_tensor)
-        prediction = model_eval.item() * big_number
+        prediction = model_eval.item() * SCALE_FACTOR
         model_predictions.append(prediction)
         # actual = uno + 6 #adjusted for 5 term sequence
         actual_values.append(actual)
 
         #%change
-        change = 100*((prediction - actual)/(actual))
-        change = round(abs(change))
+        try: 
+            change = 100*(abs(prediction - actual)/(actual))
+        except ZeroDivisionError:
+            print("Division by zero error")
+        
         percent_changes.append(change)
 
         #difference
@@ -170,13 +187,6 @@ dataframe = pd.DataFrame(datatable)
 print(dataframe)
 
 
-    #pre_un = chow(test_seq_un)
-    #pre_deux = chow(test_seq_deux)
-    #pre_trois = chow(test_seq_trois)
-
-    #print(f"Actual answer: 10 Model Prediction: {pre_un.item() * big_number:.2f}")
-    #print(f"Actual answer: 43 Model Prediction: {pre_deux.item() * big_number:.2f}")
-    #print(f"Actual answer: 53 Model Prediction: {pre_trois.item() * big_number:.2f}")
 
 #visual representation of predicted vs actual (matplotlib code)
 plt.figure(2)
@@ -197,3 +207,8 @@ plt.title('Predicted and Actual Values per Test')
 plt.legend()
 
 plt.show()
+
+MEAN_ERROR = np.mean(percent_changes)
+
+if (MEAN_ERROR <= 1.00):
+    torch.save(chow.state_dict(), f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR * 100}.pth")

@@ -10,6 +10,9 @@ def run_app():
     win.geometry("800x600")
     win.title("Stock Predictor App")
 
+    #initialize close value list
+    close_value_list = []
+
     # Dropdown/symbols/time intervals
     time_period = ["1d", "5d", "7d", "1mo", "3mo"]  
     symbols = es.symbols
@@ -42,6 +45,10 @@ def run_app():
     # Initialize search suggestion
     search_engine = ss.search_engine(win, sb_entry, sb_sv, symbols)
 
+    #let ai_implementation fetch close value list
+    def fetch_close_values():
+        return close_value_list
+
     # Entry configuration: force uppercase and update suggestions
     def on_entry_change(*args):
         # Force uppercase input
@@ -57,6 +64,9 @@ def run_app():
 
         pop = yn.Stock(sb_sv.get())
         api_info = pop.getInfo().history(period=tp_sv.get(), interval=ti_iv.get())
+
+        close_value_list = api_info["Close"].tolist()
+        print(close_value_list)
 
         reg_inst = linreg.Reg(api_info)
         
