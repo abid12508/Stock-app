@@ -1,5 +1,0 @@
-import UI.app as app
-
-def output():
-    close_value_list = app.run_app.fetch_value_list()
-    print(close_value_list)

@@ -34,8 +34,8 @@ test_set = bigdata.gen_data([], testing_size)
 SCALE_FACTOR = max([max(seq) for seq, _ in dataset]) 
 HIDDEN_SIZE = 128
 LAYERS = 1
-EPOCHS = 50
-BATCH_SIZE = 32
+EPOCHS = 100
+BATCH_SIZE = 128
 
 #Model Saving variables
 MODEL_NAME = "AbidLSTM"
@@ -105,23 +105,24 @@ loss_vals = []
 
 
 # after new update, 
-for epoch in range(EPOCHS):
-    for batch_X, batch_y in train_loader:
-        chow.train() #sets model to training mode
+def testing_model():
+    for epoch in range(EPOCHS):
+        for batch_X, batch_y in train_loader:
+            chow.train() #sets model to training mode
 
-        optimizer.zero_grad() #resets gradients
-        output = chow(batch_X) #not really sure whats going on here
-        loss = criterion(output, batch_y)
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad() #resets gradients
+            output = chow(batch_X) #not really sure whats going on here
+            loss = criterion(output, batch_y)
+            loss.backward()
+            optimizer.step()
 
-    print(f"Epoch: {epoch} Loss:{loss.item()}")
-    loss_vals.append(loss.item())
+        print(f"Epoch: {epoch} Loss:{loss.item()}")
+        loss_vals.append(loss.item())
 
-    scheduler.step()
+        scheduler.step()
 
 # code to graph epochs vs loss
-graph_x = [i for i in range(0, len(loss_vals))]
+"""graph_x = [i for i in range(0, len(loss_vals))]
 graph_y = [float(i) for i in loss_vals]
 
 plt.figure(1)
@@ -131,23 +132,7 @@ plt.title("Epochs vs Loss")
 plt.xlabel("Epochs")
 plt.ylabel("Losses")
 
-plt.grid(True)
-
-
-
-
-#testing our trained model
-
-testers = bigdata.gen_testers(big_number)
-
-#test_seq_un = torch.tensor([[7.0 / big_number, 8.0 / big_number, 9.0 / big_number]],
-#                           dtype=torch.float32).view(1, 3, 1)
-#
-#test_seq_deux = torch.tensor([[40.0 / big_number, 41.0 / big_number, 42.0 / big_number]],
-#                             dtype=torch.float32).view(1, 3, 1)
-#
-#test_seq_trois = torch.tensor([[50.0 / big_number, 51.0 / big_number, 52.0 / big_number]],
-#                              dtype=torch.float32).view(1, 3, 1)
+plt.grid(True)"""
 
 #visual representation of predicted vs actual (variables)
 x_axis = [i for i in range(50)]
@@ -157,32 +142,34 @@ percent_changes = []
 differences = []
 
 #switch to eval mode
-chow.eval()
-with torch.no_grad():
-    i = 1
-    print("TESTING!")
-    for t_seq, actual in test_set:
-        test_tensor = torch.tensor([[i / SCALE_FACTOR for i in t_seq]], dtype=torch.float32).view(1, 5, 1)
 
-        model_eval = chow(test_tensor)
-        prediction = model_eval.item() * SCALE_FACTOR
-        
-        model_predictions.append(prediction)
-        actual_values.append(actual)
+def training_model():
+    chow.eval()
+    with torch.no_grad():
+        i = 1
+        print("TESTING!")
+        for t_seq, actual in test_set:
+            test_tensor = torch.tensor([[i / SCALE_FACTOR for i in t_seq]], dtype=torch.float32).view(1, 5, 1)
 
-        #%change
-        try: 
-            change = 100*(abs(prediction - actual)/(actual))
-        except ZeroDivisionError:
-            print("Division by zero error")
-        
-        percent_changes.append(change)
+            model_eval = chow(test_tensor)
+            prediction = model_eval.item() * SCALE_FACTOR
+            
+            model_predictions.append(prediction)
+            actual_values.append(actual)
 
-        #difference
-        difference = abs(prediction - actual)
-        differences.append(difference)
+            #%change
+            try: 
+                change = 100*(abs(prediction - actual)/(actual))
+            except ZeroDivisionError:
+                print("Division by zero error")
+            
+            percent_changes.append(change)
 
-        i += 1
+            #difference
+            difference = abs(prediction - actual)
+            differences.append(difference)
+
+            i += 1
 
 datatable = {
     "Actual": actual_values,
@@ -197,7 +184,7 @@ print(dataframe)
 
 
 
-#visual representation of predicted vs actual (matplotlib code)
+"""#visual representation of predicted vs actual (matplotlib code)
 plt.figure(2)
 # Plot each set of Y-values
 plt.scatter(x_axis, model_predictions, label="Predicted", color='r') #
@@ -216,7 +203,7 @@ plt.title('Predicted and Actual Values per Test')
 plt.legend()
 
 plt.show()
-
+"""
 
 #this is for saving the model (if its accurate)
 
@@ -226,6 +213,6 @@ MEAN_ERROR = np.mean(percent_changes)
 #if the average error is lower than 1%, save the model
 if (MEAN_ERROR < 1.00):
     today = datetime.now().strftime("%Y-%m-%d")
-    file_path = f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR:.5f}_{today}.pth"
+    file_path = f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR:.5f}_{SCALE_FACTOR}_{today}.pth"
     torch.save(chow.state_dict(), file_path)
     print(f"model saved as: {file_path}")
