@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
 
 # graphing
 import matplotlib.pyplot as plt
@@ -10,7 +11,8 @@ import matplotlib.pyplot as plt
 import first_steps_data as bigdata
 
 #other imports
-import random as rand
+import os
+from datetime import datetime
 import pandas as pd
 import numpy as np
 
@@ -20,25 +22,25 @@ import numpy as np
 #torch.manual_seed(34180) #for reproducibility? just picked a random number for now
 
 # dataset!!
-big_number = 20000 #modify this to 50k for higher accuracy? my laptops out of memory
+big_number = 30000 #modify this to 50k for higher accuracy? my laptops out of memory
+
+#initializing sets
+testing_size = 50
+
+dataset = bigdata.gen_data([], big_number)
+test_set = bigdata.gen_data([], testing_size)
 
 #### HYPER PARAMETERS #####
-SCALE_FACTOR = 500
+SCALE_FACTOR = max([max(seq) for seq, _ in dataset]) 
 HIDDEN_SIZE = 128
 LAYERS = 1
-EPOCHS = 150
+EPOCHS = 100
+BATCH_SIZE = 256
 
-#Other Variables
+#Model Saving variables
 MODEL_NAME = "AbidLSTM"
-MODEL_WEIGHT_PATH = 'weights'
-
-
-testing_size = 50
-dataset = bigdata.gen_data([], big_number)
-
-test_set = bigdata.gen_data([], testing_size)
-rand.shuffle(dataset) #turns out you have to have this as a single line
-
+MODEL_WEIGHT_PATH = "weights"
+os.makedirs(MODEL_WEIGHT_PATH, exist_ok=True)
 
 # create tensors (pytorch fancy arrays)
 X = torch.tensor([[i/SCALE_FACTOR for i in seq] for seq, _ in dataset],
@@ -51,6 +53,10 @@ y = torch.tensor([target/SCALE_FACTOR for _, target in dataset],
 X = X.view(len(dataset), 5, 1) #adjust view since we have a 5 term sequence instead of 3
 y = y.view(len(dataset), 1)
 
+
+#variables for testing AI in batches
+train_data = TensorDataset(X, y)
+train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
 
 # Create our model class
 class AbidLSTM(nn.Module):
@@ -67,7 +73,7 @@ class AbidLSTM(nn.Module):
             batch_first=True            
 
         )
-        self.dropout = nn.Dropout(p=.2)
+        self.dropout = nn.Dropout(p=.05)
         self.linear = nn.Linear(HIDDEN_SIZE, 1)
 
 
@@ -80,12 +86,18 @@ class AbidLSTM(nn.Module):
 # an instance of our baby model
 chow = AbidLSTM()
 
+#Check if user has GPU, if not, then just use cpu
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+chow.to(device)
+X, y = X.to(device), y.to(device)
+
 # create our loss function and our optimizer
 criterion = nn.MSELoss()
-optimizer = optim.Adam(chow.parameters(), lr=0.01) #no clue about parameters() but our learning rate is 0.01
+optimizer = optim.Adam(chow.parameters(), lr=0.001) #no clue about parameters() but our learning rate is 0.01
 
 #learning rate decay?
-#scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=50, gamma=0.5)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+
 
 #time to train our model!
 #loops over data set epoch times
@@ -94,18 +106,19 @@ loss_vals = []
 
 # after new update, 
 for epoch in range(EPOCHS):
-    chow.train() #sets model to training mode
+    for batch_X, batch_y in train_loader:
+        chow.train() #sets model to training mode
 
-    optimizer.zero_grad() #resets gradients
-    output = chow(X) #not really sure whats going on here
-    loss = criterion(output, y)
-    loss.backward()
-    optimizer.step()
-    #scheduler.step()
+        optimizer.zero_grad() #resets gradients
+        output = chow(batch_X) #not really sure whats going on here
+        loss = criterion(output, batch_y)
+        loss.backward()
+        optimizer.step()
 
-    print(f"Epoch: {epoch} Loss:{loss.item():.4f}")
+    print(f"Epoch: {epoch} Loss:{loss.item()}")
     loss_vals.append(loss.item())
 
+    scheduler.step()
 
 # code to graph epochs vs loss
 graph_x = [i for i in range(0, len(loss_vals))]
@@ -149,16 +162,12 @@ with torch.no_grad():
     i = 1
     print("TESTING!")
     for t_seq, actual in test_set:
-    # for i in range(50):
         test_tensor = torch.tensor([[i / SCALE_FACTOR for i in t_seq]], dtype=torch.float32).view(1, 5, 1)
 
-        #Old testing
-        # uno = rand.randint(0, big_number)
-        # test_seq = testers[uno]
         model_eval = chow(test_tensor)
         prediction = model_eval.item() * SCALE_FACTOR
+        
         model_predictions.append(prediction)
-        # actual = uno + 6 #adjusted for 5 term sequence
         actual_values.append(actual)
 
         #%change
@@ -216,5 +225,7 @@ MEAN_ERROR = np.mean(percent_changes)
 
 #if the average error is lower than 1%, save the model
 if (MEAN_ERROR <= 1.00):
-    torch.save(chow.state_dict(), f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR * 100}.pth")
-    print(f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR * 100}.pth")
+    today = datetime.now().strftime("%Y-%m-%d")
+    file_path = f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR * 100:.5f}_{today}.pth"
+    torch.save(chow.state_dict(), file_path)
+    print(f"model saved as: {file_path}")
