@@ -34,8 +34,8 @@ test_set = bigdata.gen_data([], testing_size)
 SCALE_FACTOR = max([max(seq) for seq, _ in dataset]) 
 HIDDEN_SIZE = 128
 LAYERS = 1
-EPOCHS = 100
-BATCH_SIZE = 256
+EPOCHS = 50
+BATCH_SIZE = 32
 
 #Model Saving variables
 MODEL_NAME = "AbidLSTM"
@@ -224,8 +224,8 @@ plt.show()
 MEAN_ERROR = np.mean(percent_changes)
 
 #if the average error is lower than 1%, save the model
-if (MEAN_ERROR <= 1.00):
+if (MEAN_ERROR < 1.00):
     today = datetime.now().strftime("%Y-%m-%d")
-    file_path = f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR * 100:.5f}_{today}.pth"
+    file_path = f"{MODEL_WEIGHT_PATH}/{MODEL_NAME}_{MEAN_ERROR:.5f}_{today}.pth"
     torch.save(chow.state_dict(), file_path)
     print(f"model saved as: {file_path}")
