@@ -1,6 +1,9 @@
 import torch
 import random as rand
 
+from UI import app
+
+
 def gen_data(dataset, size):
     i = 1
     while i <= size:
@@ -32,6 +35,32 @@ def gen_testers(bigboy):
                                  dtype=torch.float32).view(1, 5, 1)) #adjust middle number to account for 5 term sequence
         i+=1
     return data
+
+
+
+def closing_data(app_instance):
+
+    close_list = app_instance.return_close_values()
+    print(close_list)
+
+    X_list = []
+    y_list = []
+
+    l = 0
+    r = 2
+
+    while l <= r and r+1 < len(close_list):
+
+        X_list.append(close_list[l:r+1])
+        y_list.append(close_list[r+1])
+        
+        l+=1
+        r+=1
+    
+    print(X_list)
+    print(y_list)
+
+    
 
 #AI implementation
 """ Convert closing values into a list 
